@@ -1,5 +1,6 @@
 package com.example.taskmanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -19,16 +20,20 @@ public class Folders {
     private Long id;
 
     @Column(name = "folder_name")
-    private String folder_name;
+    @JsonProperty("folder_name")
+    private String folderName;
 
     @Column(name = "user_id")
-    private Long user_id;
+    @JsonProperty("user_id")
+    private Long userId;
 
     @CreationTimestamp
     @Column(name = "created_at")
-    private LocalDateTime created_at;
+    @JsonProperty("created_at")
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updated_at;
+    @JsonProperty("updated_at")
+    private LocalDateTime updatedAt;
 }

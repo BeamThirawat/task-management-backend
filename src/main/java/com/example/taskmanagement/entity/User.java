@@ -1,5 +1,6 @@
 package com.example.taskmanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -27,9 +28,11 @@ public class User {
     private String password;
 
     @Column(name = "google_id")
-    private String google_id;
+    @JsonProperty("google_id")
+    private String googleId;
 
     @CreationTimestamp
     @Column(name = "created_at")
-    private LocalDateTime created_at;
+    @JsonProperty("created_at")
+    private LocalDateTime createdAt;
 }
