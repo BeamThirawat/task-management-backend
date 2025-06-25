@@ -10,7 +10,10 @@ import java.util.Optional;
 @Repository
 public interface TasksRepository extends JpaRepository<Tasks, Long> {
 
-    List<Tasks> findByUserId(Long user_id);
+    List<Tasks> findByUserIdOrderByIdDesc(Long user_id);
     Optional<Tasks> findById(Long id);
     List<Tasks> findByStatus(Tasks.TaskStatus status);
+    List<Tasks> findByStatusAndUserIdOrderByIdDesc(Tasks.TaskStatus status, Long userId);
+
+    void  deleteByFolderId(Long id);
 }

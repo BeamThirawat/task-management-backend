@@ -12,6 +12,10 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FolderResponseDto {
+
+    @JsonProperty("folder_id")
+    private Long id;
+
     @JsonProperty("folder_name")
     private String folderName;
 }

@@ -22,20 +22,18 @@ import java.util.List;
 @Tag(name = "Task management", description = "API For Task management")
 public class TaskController {
 
-    private static final Logger logger = LoggerFactory.getLogger(TaskController.class);
-
     @Autowired
     private TaskService service;
 
     @Operation(description = "Get List Task By User ID")
     @GetMapping(value = "getTasks")
-    public StandardResponseDto<List<Tasks>> getTasks(@RequestParam Long user_id,
-                                                     @RequestParam(required = false) Tasks.TaskStatus status) {
+    public StandardResponseDto<List<TaskResponseDto.GetTaskResponseDto>> getTasks(@RequestParam(required = false) Tasks.TaskStatus status) {
         try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
             if (status != null) {
-                return StandardResponseDto.createSuccessResponse(service.getTasksByStatus(status));
+                return StandardResponseDto.createSuccessResponse(service.getTasksByStatus(status, email));
             }
-            return StandardResponseDto.createSuccessResponse(service.getTasks(user_id));
+            return StandardResponseDto.createSuccessResponse(service.getTasks(email));
         } catch (Exception e) {
             return StandardResponseDto.createFailResponse(e.getMessage(), null);
         }
@@ -45,7 +43,8 @@ public class TaskController {
     @GetMapping(value = "getTask")
     public StandardResponseDto<TaskResponseDto.GetTaskResponseDto> getTask(@RequestParam Long id) {
         try {
-            return StandardResponseDto.createSuccessResponse(service.getTask(id));
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            return StandardResponseDto.createSuccessResponse(service.getTask(id, email));
         } catch (Exception e) {
             return StandardResponseDto.createFailResponse(e.getMessage(), null);
         }
@@ -53,9 +52,10 @@ public class TaskController {
 
     @Operation(description = "Add Task")
     @PostMapping(value = "addTask")
-    public StandardResponseDto<Tasks> addTask(@RequestBody TaskRequestDto.AddAndUpdateTaskRequestDto requestDto) {
+    public StandardResponseDto<TaskResponseDto.GetTaskResponseDto> addTask(@RequestBody TaskRequestDto.AddAndUpdateTaskRequestDto requestDto) {
         try {
-            return StandardResponseDto.createSuccessResponse(service.addTask(requestDto));
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            return StandardResponseDto.createSuccessResponse(service.addTask(requestDto, email));
         } catch (Exception e) {
             return StandardResponseDto.createFailResponse(e.getMessage(), null);
         }
@@ -63,9 +63,11 @@ public class TaskController {
 
     @Operation(description = "Edit Task")
     @PostMapping(value = "editTask")
-    public StandardResponseDto<Tasks> editTask(@RequestBody TaskRequestDto.AddAndUpdateTaskRequestDto requestDto, @RequestParam Long id) {
+    public StandardResponseDto<TaskResponseDto.GetTaskResponseDto> editTask(@RequestBody TaskRequestDto.AddAndUpdateTaskRequestDto requestDto,
+                                               @RequestParam Long id) {
         try {
-            return StandardResponseDto.createSuccessResponse(service.editTask(requestDto, id));
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            return StandardResponseDto.createSuccessResponse(service.editTask(requestDto, id, email));
         } catch (Exception e) {
             return StandardResponseDto.createFailResponse(e.getMessage(), null);
         }
@@ -76,7 +78,6 @@ public class TaskController {
     public StandardResponseDto<String> deleteTask(@RequestParam Long id) {
         try {
             String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            logger.info("Logged-in Email: " + email);
             service.deleteTask(id,email);
             return StandardResponseDto.createSuccessResponse("delete Task Success");
         } catch (Exception e) {
