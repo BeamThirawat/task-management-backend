@@ -8,6 +8,7 @@ import com.example.taskmanagement.service.FoldersService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,21 +21,23 @@ public class FoldersController {
     @Autowired
     private FoldersService service;
 
-    @Operation(summary = "Get List Folder By User ID")
-    @GetMapping(value = "getFolders/{user_id}")
-    public StandardResponseDto<List<Folders>> getFolders(@PathVariable Long user_id) {
+    @Operation(summary = "Get List Folder By Email")
+    @GetMapping(value = "getFolders")
+    public StandardResponseDto<List<FolderResponseDto>> getFolders() {
         try {
-            return StandardResponseDto.createSuccessResponse(service.getFolders(user_id));
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            return StandardResponseDto.createSuccessResponse(service.getFolders(email));
         } catch (Exception e) {
             return StandardResponseDto.createFailResponse(e.getMessage(), null);
         }
     }
 
     @Operation(summary = "Get Folder by ID")
-    @GetMapping(value = "getFolder/{id}")
-    public StandardResponseDto<FolderResponseDto> getFolder(@PathVariable Long id) {
+    @GetMapping(value = "getFolder")
+    public StandardResponseDto<FolderResponseDto> getFolder(@RequestParam Long id) {
         try {
-            return StandardResponseDto.createSuccessResponse(service.getFolder(id));
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            return StandardResponseDto.createSuccessResponse(service.getFolder(id, email));
         } catch (Exception e) {
             return StandardResponseDto.createFailResponse(e.getMessage(), null);
         }
@@ -42,29 +45,32 @@ public class FoldersController {
 
     @Operation(summary = "Add New Folder")
     @PostMapping(value = "addFolder")
-    public StandardResponseDto<Folders> AddFolder(@RequestBody FolderRequestDto requestDto) {
+    public StandardResponseDto<FolderResponseDto> AddFolder(@RequestBody FolderRequestDto requestDto) {
         try {
-            return StandardResponseDto.createSuccessResponse(service.addFolder(requestDto));
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            return StandardResponseDto.createSuccessResponse(service.addFolder(requestDto, email));
         } catch (Exception e) {
             return StandardResponseDto.createFailResponse(e.getMessage(), null);
         }
     }
 
     @Operation(summary = "Edit Folder")
-    @PostMapping(value = "editFolder/{id}")
-    public StandardResponseDto<Folders> EditFolder(@RequestBody FolderRequestDto requestDto, @PathVariable Long id){
+    @PostMapping(value = "editFolder")
+    public StandardResponseDto<FolderResponseDto> EditFolder(@RequestBody FolderRequestDto requestDto, @RequestParam Long id){
         try {
-            return StandardResponseDto.createSuccessResponse(service.editFolder(requestDto, id));
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            return StandardResponseDto.createSuccessResponse(service.editFolder(requestDto, id, email));
         } catch (Exception e) {
             return StandardResponseDto.createFailResponse(e.getMessage(), null);
         }
     }
 
     @Operation(summary = "Delete Folder")
-    @DeleteMapping(value = "deleteFolder/{id}")
-    public StandardResponseDto<String> deleteFolder(@PathVariable Long id) {
+    @DeleteMapping(value = "deleteFolder")
+    public StandardResponseDto<String> deleteFolder(@RequestParam Long id) {
         try {
-            service.deleteFolder(id);
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            service.deleteFolder(id, email);
             return StandardResponseDto.createSuccessResponse("Delete Folder Success");
         } catch (Exception e) {
            return StandardResponseDto.createFailResponse(e.getMessage(), null);

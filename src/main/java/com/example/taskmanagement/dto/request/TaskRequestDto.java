@@ -21,8 +21,6 @@ public class TaskRequestDto {
         private String description;
         private Tasks.TaskStatus status;
 
-        @JsonProperty("user_id")
-        private Long userId;
         @JsonProperty("folder_id")
         private Long folderId;
         @JsonProperty("start_date")
@@ -37,8 +35,7 @@ public class TaskRequestDto {
         private String title;
         private String description;
         private Tasks.TaskStatus status;
-        @JsonProperty("user_id")
-        private Long userId;
+
         @JsonProperty("folder_id")
         private Long folderId;
         @JsonProperty("start_date")

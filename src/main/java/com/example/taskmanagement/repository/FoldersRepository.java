@@ -11,5 +11,5 @@ import java.util.Optional;
 public interface FoldersRepository extends JpaRepository<Folders, Long> {
 
     Optional<Folders> findById(Long id);
-    List<Folders> findByUserId(Long user_id);
+    List<Folders> findByUserIdOrderByIdDesc(Long user_id);
 }

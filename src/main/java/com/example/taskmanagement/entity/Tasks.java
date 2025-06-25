@@ -30,13 +30,13 @@ public class Tasks {
     @Column(name = "status")
     private TaskStatus status;
 
-    @Column(name = "user_id")
-    @JsonProperty("user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "folder_id")
-    @JsonProperty("folder_id")
-    private Long folderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id", nullable = false)
+    private Folders folder;
 
     @Column(name = "start_date")
     @JsonProperty("start_date")
