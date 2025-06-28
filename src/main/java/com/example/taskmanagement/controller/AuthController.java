@@ -10,10 +10,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping(value = "/auth")
@@ -65,5 +64,18 @@ public class AuthController {
         response.addCookie(cookie);
 
         return StandardResponseDto.createSuccessResponse("Logged out successfully.");
+    }
+
+    @Operation(summary = "OAuth2 Google")
+    @GetMapping(value = "google")
+    public void googleLogin(@RequestParam(required = false) String redirect_uri,
+                            HttpServletResponse response) throws IOException {
+
+        String googleAuthUrl = "/oauth2/authorize/google";
+        if (redirect_uri != null) {
+            googleAuthUrl += "?redirect_uri=" + redirect_uri;
+        }
+
+        response.sendRedirect(googleAuthUrl);
     }
 }
