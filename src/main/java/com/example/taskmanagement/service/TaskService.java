@@ -38,18 +38,16 @@ public class TaskService {
 
     // get list task by email
     public List<TaskResponseDto.GetTaskResponseDto> getTasks(String email) {
-        // get user by email (Auth => cookie)
-        logger.info("##### Get list tasks by email #####");
-        logger.info("##### get user by email (Auth => cookie) #####");
+        logger.info("Fetching task list for user: {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    logger.warn("User not found with email: {}", email);
+                    return new RuntimeException("User not found");
+                });
 
-        logger.info("##### Get tasks list and create taskResponseDtoList #####");
         List<Tasks> tasksList = repository.findByUserIdOrderByIdDesc(user.getId());
-        List<TaskResponseDto.GetTaskResponseDto> taskResponseDtoList = new ArrayList<>();
+        logger.debug("Found {} tasks for user ID: {}", tasksList.size(), user.getId());
 
-        // map Tasks -> TaskResponseDto.GetTaskResponseDto
-        logger.info("##### Map tasks #####");
         return tasksList.stream()
                 .map(tasks -> new TaskResponseDto.GetTaskResponseDto()
                         .setId(tasks.getId())
@@ -64,18 +62,16 @@ public class TaskService {
 
     // get list task by status
     public List<TaskResponseDto.GetTaskResponseDto> getTasksByStatus(Tasks.TaskStatus status, String email) {
-        // get user
-        logger.info("##### Get task by status #####");
-        logger.info("##### get user by email (Auth => cookie) #####");
+        logger.info("Fetching tasks by status [{}] for user: {}", status, email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    logger.warn("User not found with email: {}", email);
+                    return new RuntimeException("User not found");
+                });
 
-        // query task for status
-        logger.info("##### Get Tasks by status #####");
         List<Tasks> tasksList = repository.findByStatusAndUserIdOrderByIdDesc(status, user.getId());
+        logger.debug("Found {} tasks with status [{}] for user ID: {}", tasksList.size(), status, user.getId());
 
-        // map to DTO
-        logger.info("##### Map tasks #####");
         return tasksList.stream()
                 .map(task -> new TaskResponseDto.GetTaskResponseDto()
                         .setId(task.getId())
@@ -90,61 +86,60 @@ public class TaskService {
 
     // get task detail by id
     public TaskResponseDto.GetTaskResponseDto getTask(Long id, String email) {
-        // get task by id
-        logger.info("##### Get task by id #####");
-        logger.info("##### get user by email (Auth => cookie) #####");
+        logger.info("Fetching task with ID: {} for user: {}", id, email);
         Tasks task = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with ID: " + id));
+                .orElseThrow(() -> {
+                    logger.warn("Task not found with ID: {}", id);
+                    return new RuntimeException("Task not found with ID: " + id);
+                });
 
-        // validate email before get set TaskResponseDto
-        logger.info("##### Validate email before get set TaskResponseDto #####");
         if (!task.getUser().getEmail().equals(email)) {
+            logger.warn("Unauthorized access attempt to task ID: {} by user: {}", id, email);
             throw new RuntimeException("You are not allowed to get this task");
         }
 
-            TaskResponseDto.GetTaskResponseDto taskResponseDto = new TaskResponseDto.GetTaskResponseDto();
-            taskResponseDto.setId(task.getId())
-                    .setTitle(task.getTitle())
-                    .setDescription(task.getDescription())
-                    .setStatus(task.getStatus())
-                    .setUserId(task.getUser().getId())
-                    .setFolderId(task.getFolder().getId())
-                    .setStartDate(task.getStartDate());
-            return taskResponseDto;
+        return new TaskResponseDto.GetTaskResponseDto()
+                .setId(task.getId())
+                .setTitle(task.getTitle())
+                .setDescription(task.getDescription())
+                .setStatus(task.getStatus())
+                .setUserId(task.getUser().getId())
+                .setFolderId(task.getFolder().getId())
+                .setStartDate(task.getStartDate());
     }
 
     // add task
     public TaskResponseDto.GetTaskResponseDto addTask(TaskRequestDto.AddAndUpdateTaskRequestDto requestDto, String email) {
-        logger.info("##### Add task #####");
-        logger.info("##### get user by email (Auth => cookie) #####");
-        // get user by email (Auth => cookie)
+        logger.info("Adding new task for user: {}", email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    logger.warn("User not found with email: {}", email);
+                    return new RuntimeException("User not found");
+                });
 
-        // get folder by folderId
-        logger.info("##### get folder by folderId #####");
         Folders folder = foldersRepository.findById(requestDto.getFolderId())
-                .orElseThrow(() -> new RuntimeException("Folder not found"));
+                .orElseThrow(() -> {
+                    logger.warn("Folder not found with ID: {}", requestDto.getFolderId());
+                    return new RuntimeException("Folder not found");
+                });
 
-        // validate folder
-        logger.info("##### Validate folder #####");
         if (!folder.getUser().getId().equals(user.getId())) {
+            logger.warn("Unauthorized folder access: folder ID {} does not belong to user {}", folder.getId(), email);
             throw new RuntimeException("You are not allowed to use this folder");
         }
 
-        // Add Task
-        logger.info("Add task");
-        Tasks tasks = new Tasks();
-        tasks.setTitle(requestDto.getTitle())
+        Tasks tasks = new Tasks()
+                .setTitle(requestDto.getTitle())
                 .setDescription(requestDto.getDescription())
                 .setStatus(requestDto.getStatus())
                 .setUser(user)
                 .setFolder(folder)
                 .setStartDate(requestDto.getStartDate())
                 .setCreatedAt(LocalDateTime.now());
-        Tasks saveTask = repository.save(tasks);
 
-        logger.info("Return taskResponseDto");
+        Tasks saveTask = repository.save(tasks);
+        logger.info("Task added successfully with ID: {}", saveTask.getId());
+
         return new TaskResponseDto.GetTaskResponseDto()
                 .setId(saveTask.getId())
                 .setTitle(saveTask.getTitle())
@@ -155,33 +150,37 @@ public class TaskService {
                 .setStartDate(saveTask.getStartDate());
     }
 
-     //edit task
+    // edit task
     public TaskResponseDto.GetTaskResponseDto editTask(TaskRequestDto.AddAndUpdateTaskRequestDto requestDto, Long id, String email) {
-        logger.info("##### Get task from DB");
-        // get task from DB
+        logger.info("Editing task ID: {} by user: {}", id, email);
         Tasks task = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found ID: " + id));
+                .orElseThrow(() -> {
+                    logger.warn("Task not found with ID: {}", id);
+                    return new RuntimeException("Task not found ID: " + id);
+                });
 
-        logger.info("##### validate email before edit #####");
-        // validate email before edit
         if (!task.getUser().getEmail().equals(email)) {
+            logger.warn("Unauthorized edit attempt on task ID: {} by user: {}", id, email);
             throw new RuntimeException("You are not allowed to edit this task");
         }
 
-        // get user by email
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        // get folder by folderId
-        Folders folder = foldersRepository.findById(requestDto.getFolderId())
-                .orElseThrow(() -> new RuntimeException("Folder not found"));
+                .orElseThrow(() -> {
+                    logger.warn("User not found with email: {}", email);
+                    return new RuntimeException("User not found");
+                });
 
-        logger.info("##### validate folder #####");
-        // validate folder
+        Folders folder = foldersRepository.findById(requestDto.getFolderId())
+                .orElseThrow(() -> {
+                    logger.warn("Folder not found with ID: {}", requestDto.getFolderId());
+                    return new RuntimeException("Folder not found");
+                });
+
         if (!folder.getUser().getId().equals(user.getId())) {
+            logger.warn("Unauthorized folder access while editing: folder ID {} does not belong to user {}", folder.getId(), email);
             throw new RuntimeException("You are not allowed to use this folder");
         }
 
-        logger.info("##### save #####");
         task.setTitle(requestDto.getTitle())
                 .setDescription(requestDto.getDescription())
                 .setStatus(requestDto.getStatus())
@@ -191,6 +190,7 @@ public class TaskService {
                 .setUpdatedAt(LocalDateTime.now());
 
         Tasks saveTask = repository.save(task);
+        logger.info("Task updated successfully with ID: {}", saveTask.getId());
 
         return new TaskResponseDto.GetTaskResponseDto()
                 .setId(saveTask.getId())
@@ -204,16 +204,19 @@ public class TaskService {
 
     // delete task
     public void deleteTask(Long id, String email) {
-        logger.info("##### Delete Task #####");
-        // get task by id
+        logger.info("Deleting task with ID: {} by user: {}", id, email);
         Tasks task = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with ID: " + id));
+                .orElseThrow(() -> {
+                    logger.warn("Task not found with ID: {}", id);
+                    return new RuntimeException("Task not found with ID: " + id);
+                });
 
-        // validate email before delete
         if (!task.getUser().getEmail().equals(email)) {
+            logger.warn("Unauthorized delete attempt on task ID: {} by user: {}", id, email);
             throw new RuntimeException("You are not allowed to delete this task");
         }
 
         repository.deleteById(id);
+        logger.info("Task deleted successfully with ID: {}", id);
     }
 }

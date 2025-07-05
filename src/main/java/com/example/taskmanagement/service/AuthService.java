@@ -6,6 +6,8 @@ import com.example.taskmanagement.entity.User;
 import com.example.taskmanagement.repository.UserRepository;
 import com.example.taskmanagement.util.JwtUtil;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,20 +28,27 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+
     // register service
     public User register(AuthRequestDto.RegisterRequestDto requestDto) {
+        logger.info("Attempting to register user with username: {} and email: {}", requestDto.getUsername(), requestDto.getEmail());
+
         // Check Duplicate username
         if (repository.existsByUsername(requestDto.getUsername())) {
+            logger.warn("Registration failed - Username '{}' is already taken", requestDto.getUsername());
             throw new RuntimeException("Username is already taken.");
         }
 
         // Check Duplicate Email
         if (repository.existsByEmail(requestDto.getEmail())) {
+            logger.warn("Registration failed - Email '{}' is already registered", requestDto.getEmail());
             throw new RuntimeException("Email is already registered.");
         }
 
         // encode password
         String password = passwordEncoder.encode(requestDto.getPassword());
+        logger.debug("Password encoded for user: {}", requestDto.getUsername());
 
         // Add User
         User user = new User();
@@ -48,15 +57,20 @@ public class AuthService {
                 .setPassword(password)
                 .setCreatedAt(LocalDateTime.now());
 
-        return repository.save(user);
+        User savedUser = repository.save(user);
+        logger.info("User registered successfully with ID: {}", savedUser.getId());
+
+        return savedUser;
     }
 
     // login service
     public LoginResponseDto login(AuthRequestDto.LoginRequestDto requestDto) {
+        logger.info("Login attempt for email: {}", requestDto.getEmail());
 
         // check email
         Optional<User> userOptional = repository.findByEmail(requestDto.getEmail());
         if (userOptional.isEmpty()) {
+            logger.warn("Login failed - Email '{}' not found", requestDto.getEmail());
             throw new RuntimeException("Email or Password is not Correct");
         }
 
@@ -64,11 +78,13 @@ public class AuthService {
         User user = userOptional.get();
         // Check password
         if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
+            logger.warn("Login failed - Invalid password for email: {}", requestDto.getEmail());
             throw new RuntimeException("Email or Password is not Correct");
         }
 
         // create Token
         String token = jwtUtil.generateToken(user.getEmail());
+        logger.info("Login successful for email: {}", user.getEmail());
 
         return new LoginResponseDto(user.getId(), user.getUsername(), user.getEmail(), token);
     }
