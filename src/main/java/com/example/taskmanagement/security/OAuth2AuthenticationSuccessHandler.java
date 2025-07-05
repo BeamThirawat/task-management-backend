@@ -5,9 +5,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -17,30 +20,47 @@ import java.util.List;
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private static final Logger logger = LoggerFactory.getLogger(OAuth2AuthenticationSuccessHandler.class);
+
+    private final JwtUtil jwtUtil;
 
     @Value("${app.oauth2.authorized-redirect-uris}")
     private List<String> authorizedRedirectUris;
 
+    public OAuth2AuthenticationSuccessHandler(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
-        // casting OAuth2User => CustomOAuth2User
-        CustomOAuth2User oauthUser = (CustomOAuth2User) authentication.getPrincipal();
+        logger.info("#### OAuth2 Authen Success Active ####");
+        Object principal = authentication.getPrincipal();
+        logger.debug("Authentication principal: {}", principal);
+
+        String email;
+        logger.debug("Check principal type");
+        if (principal instanceof OidcUser oidcUser) {
+            email = oidcUser.getAttribute("email");
+        } else {
+            throw new IllegalStateException("Unexpected principal type: " + principal.getClass().getName());
+        }
 
         // create Token
-        String token = jwtUtil.generateToken(oauthUser.getUser().getEmail());
+        logger.info("Create JWT token for email: {}", email);
+        String token = jwtUtil.generateToken(email);
 
         // add token to cookie
+        logger.info("Add JWT token to cookie");
         Cookie jwtCookie = new Cookie("token", token);
         jwtCookie.setHttpOnly(true);
         jwtCookie.setSecure(false);
         jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(24 * 60 * 60);
+        jwtCookie.setMaxAge(24 * 60 * 60); // 1 day
         response.addCookie(jwtCookie);
 
         // Redirect to frontend
+        logger.info("Redirect to frontend");
         String targetUrl = determineTargetUrl(request);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
