@@ -32,39 +32,43 @@ public class FoldersService {
     @Autowired
     private TasksRepository tasksRepository;
 
-    private static final Logger logger = LoggerFactory.getLogger(TaskService.class);
+    private static final Logger logger = LoggerFactory.getLogger(FoldersService.class);
 
     // get folders by email
     public FolderResponseDto getFolder(Long id, String email) {
-        logger.info("##### Get folders by email #####");
-        Folders folder = repository.findById(id).orElseThrow(() -> new RuntimeException("Folder not found ID: " + id));
+        logger.info("Fetching folder by ID: {} and email: {}", id, email);
 
-        // validate email before get folder
-        logger.info("##### validate email before get folder #####");
+        Folders folder = repository.findById(id)
+                .orElseThrow(() -> {
+                    logger.warn("Folder not found with ID: {}", id);
+                    return new RuntimeException("Folder not found ID: " + id);
+                });
+
         if (!folder.getUser().getEmail().equals(email)) {
+            logger.warn("Access denied: email {} tried to access folder ID {} not owned by them", email, id);
             throw new RuntimeException("You are not allowed to get this folder");
         }
 
-        logger.info("##### Create folderResponseDto #####");
-        FolderResponseDto folderResponseDto = new FolderResponseDto();
-        folderResponseDto.
-                setId(folder.getId())
+        logger.debug("Creating FolderResponseDto for folder ID: {}", id);
+        return new FolderResponseDto()
+                .setId(folder.getId())
                 .setFolderName(folder.getFolderName());
-
-        return folderResponseDto;
     }
 
     // get List folders by email
     public List<FolderResponseDto> getFolders(String email) {
-        logger.info("##### Get list folders by email #####");
-        // get user by email (Auth => cookie)
+        logger.info("Fetching folder list for email: {}", email);
+
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    logger.warn("User not found with email: {}", email);
+                    return new RuntimeException("User not found");
+                });
 
         List<Folders> foldersList = repository.findByUserIdOrderByIdDesc(user.getId());
-        List<FolderResponseDto> folderResponseDtoList = new ArrayList<>();
 
-        // map Folders -> FolderResponseDto
+        logger.debug("Found {} folders for user ID: {}", foldersList.size(), user.getId());
+
         return foldersList.stream()
                 .map(folder -> new FolderResponseDto()
                         .setId(folder.getId())
@@ -74,17 +78,22 @@ public class FoldersService {
 
     // add folder
     public FolderResponseDto addFolder(FolderRequestDto requestDto, String email) {
-        logger.info("##### Add folder #####");
-        // get user by email
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        logger.info("Adding new folder '{}' for email: {}", requestDto.getFolderName(), email);
 
-        Folders folders = new Folders();
-        folders.setFolderName(requestDto.getFolderName())
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    logger.warn("User not found with email: {}", email);
+                    return new RuntimeException("User not found");
+                });
+
+        Folders folders = new Folders()
+                .setFolderName(requestDto.getFolderName())
                 .setUser(user)
                 .setCreatedAt(LocalDateTime.now());
 
         Folders savedFolder = repository.save(folders);
+
+        logger.info("Folder saved with ID: {}", savedFolder.getId());
 
         return new FolderResponseDto()
                 .setId(savedFolder.getId())
@@ -93,16 +102,22 @@ public class FoldersService {
 
     // edit folder
     public FolderResponseDto editFolder(FolderRequestDto requestDto, Long id, String email) {
-        logger.info("##### Edit folder #####");
-        // get user by email
+        logger.info("Editing folder ID: {} for email: {}", id, email);
+
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    logger.warn("User not found with email: {}", email);
+                    return new RuntimeException("User not found");
+                });
 
-        // get folder by id
-        Folders folder = repository.findById(id).orElseThrow(() -> new RuntimeException("Folder not found"));
+        Folders folder = repository.findById(id)
+                .orElseThrow(() -> {
+                    logger.warn("Folder not found with ID: {}", id);
+                    return new RuntimeException("Folder not found");
+                });
 
-        // validate email before edit folder
         if (!folder.getUser().getEmail().equals(email)) {
+            logger.warn("Unauthorized edit attempt by {} on folder ID: {}", email, id);
             throw new RuntimeException("You are not allowed to edit this folder");
         }
 
@@ -112,6 +127,8 @@ public class FoldersService {
 
         Folders savedFolder = repository.save(folder);
 
+        logger.info("Folder updated with ID: {}", savedFolder.getId());
+
         return new FolderResponseDto()
                 .setId(savedFolder.getId())
                 .setFolderName(savedFolder.getFolderName());
@@ -119,22 +136,26 @@ public class FoldersService {
 
     // delete folder
     public void deleteFolder(Long id, String email) {
-        logger.info("##### Delete folder #####");
-        // get task by id
-        Folders folder = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Folder not found with ID: " + id));
+        logger.info("Deleting folder ID: {} for email: {}", id, email);
 
-        // validate email before delete
+        Folders folder = repository.findById(id)
+                .orElseThrow(() -> {
+                    logger.warn("Folder not found with ID: {}", id);
+                    return new RuntimeException("Folder not found with ID: " + id);
+                });
+
         if (!folder.getUser().getEmail().equals(email)) {
+            logger.warn("Unauthorized delete attempt by {} on folder ID: {}", email, id);
             throw new RuntimeException("You are not allowed to delete this task");
         }
 
-        // task in folder
-        logger.info("##### Delete task #####");
+        logger.debug("Deleting tasks in folder ID: {}", id);
         tasksRepository.deleteByFolderId(id);
-        // delete folder
-        logger.info("##### Delete folder #####");
+
+        logger.debug("Deleting folder ID: {}", id);
         repository.deleteById(id);
+
+        logger.info("Folder and associated tasks deleted successfully for ID: {}", id);
     }
 
 }
