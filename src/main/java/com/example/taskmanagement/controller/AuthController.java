@@ -71,7 +71,7 @@ public class AuthController {
     public void googleLogin(@RequestParam(required = false) String redirect_uri,
                             HttpServletResponse response) throws IOException {
 
-        String googleAuthUrl = "/oauth2/authorize/google";
+        String googleAuthUrl = "/task-management/oauth2/authorize/google";
         if (redirect_uri != null) {
             googleAuthUrl += "?redirect_uri=" + redirect_uri;
         }
