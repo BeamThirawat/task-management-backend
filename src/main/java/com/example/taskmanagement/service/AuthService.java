@@ -2,6 +2,7 @@ package com.example.taskmanagement.service;
 
 import com.example.taskmanagement.dto.request.AuthRequestDto;
 import com.example.taskmanagement.dto.response.LoginResponseDto;
+import com.example.taskmanagement.dto.response.UserinfoResponseDto;
 import com.example.taskmanagement.entity.User;
 import com.example.taskmanagement.repository.UserRepository;
 import com.example.taskmanagement.util.JwtUtil;
@@ -87,5 +88,13 @@ public class AuthService {
         logger.info("Login successful for email: {}", user.getEmail());
 
         return new LoginResponseDto(user.getId(), user.getUsername(), user.getEmail(), token);
+    }
+
+    // Check Current User
+    public UserinfoResponseDto getCurrentUser(String email) {
+        User user = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return new UserinfoResponseDto(user.getId(), user.getUsername(), user.getEmail());
     }
 }

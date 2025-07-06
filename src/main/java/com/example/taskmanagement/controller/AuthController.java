@@ -3,12 +3,14 @@ package com.example.taskmanagement.controller;
 import com.example.taskmanagement.dto.request.AuthRequestDto;
 import com.example.taskmanagement.dto.response.LoginResponseDto;
 import com.example.taskmanagement.dto.response.StandardResponseDto;
+import com.example.taskmanagement.dto.response.UserinfoResponseDto;
 import com.example.taskmanagement.entity.User;
 import com.example.taskmanagement.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +18,7 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping(value = "/auth")
-@Tag(name = "Authentication", description = "API For Login / Register / Logout")
+@Tag(name = "Authentication", description = "API For Login / Register / Logout / Check Current User")
 public class AuthController {
 
     @Autowired
@@ -77,5 +79,16 @@ public class AuthController {
         }
 
         response.sendRedirect(googleAuthUrl);
+    }
+
+    @Operation(summary = "check current user")
+    @GetMapping(value = "me")
+    public StandardResponseDto<UserinfoResponseDto> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return StandardResponseDto.createUnauthorizedResponse("Access Denied User", null);
+        }
+
+        String email = authentication.getName();
+        return StandardResponseDto.createSuccessResponse(service.getCurrentUser(email));
     }
 }
