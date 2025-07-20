@@ -52,7 +52,8 @@ public class FoldersService {
         logger.debug("Creating FolderResponseDto for folder ID: {}", id);
         return new FolderResponseDto()
                 .setId(folder.getId())
-                .setFolderName(folder.getFolderName());
+                .setFolderName(folder.getFolderName())
+                .setDescription(folder.getDescription());
     }
 
     // get List folders by email
@@ -72,7 +73,8 @@ public class FoldersService {
         return foldersList.stream()
                 .map(folder -> new FolderResponseDto()
                         .setId(folder.getId())
-                        .setFolderName(folder.getFolderName()))
+                        .setFolderName(folder.getFolderName())
+                        .setDescription(folder.getDescription()))
                 .collect(Collectors.toList());
     }
 
@@ -89,6 +91,7 @@ public class FoldersService {
         Folders folders = new Folders()
                 .setFolderName(requestDto.getFolderName())
                 .setUser(user)
+                .setDescription(requestDto.getDescription())
                 .setCreatedAt(LocalDateTime.now());
 
         Folders savedFolder = repository.save(folders);
@@ -97,7 +100,8 @@ public class FoldersService {
 
         return new FolderResponseDto()
                 .setId(savedFolder.getId())
-                .setFolderName(savedFolder.getFolderName());
+                .setFolderName(savedFolder.getFolderName())
+                .setDescription(savedFolder.getDescription());
     }
 
     // edit folder
@@ -123,6 +127,7 @@ public class FoldersService {
 
         folder.setFolderName(requestDto.getFolderName())
                 .setUser(user)
+                .setDescription(requestDto.getDescription())
                 .setUpdatedAt(LocalDateTime.now());
 
         Folders savedFolder = repository.save(folder);

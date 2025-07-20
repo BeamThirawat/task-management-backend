@@ -13,4 +13,7 @@ import lombok.experimental.Accessors;
 public class FolderRequestDto {
     @JsonProperty("folder_name")
     private String folderName;
+
+    @JsonProperty("description")
+    private String description;
 }
