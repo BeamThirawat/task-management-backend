@@ -18,4 +18,7 @@ public class FolderResponseDto {
 
     @JsonProperty("folder_name")
     private String folderName;
+
+    @JsonProperty("description")
+    private String description;
 }
