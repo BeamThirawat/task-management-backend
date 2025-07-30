@@ -60,17 +60,17 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-    // get list task by status
-    public List<TaskResponseDto.GetTaskResponseDto> getTasksByStatus(Tasks.TaskStatus status, String email) {
-        logger.info("Fetching tasks by status [{}] for user: {}", status, email);
+    // get list task by folderId
+    public List<TaskResponseDto.GetTaskResponseDto> getTasksByFolderId(Long folderId, String email) {
+        logger.info("Fetching tasks by folderId [{}] for user: {}",folderId , email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
                     logger.warn("User not found with email: {}", email);
                     return new RuntimeException("User not found");
                 });
 
-        List<Tasks> tasksList = repository.findByStatusAndUserIdOrderByIdDesc(status, user.getId());
-        logger.debug("Found {} tasks with status [{}] for user ID: {}", tasksList.size(), status, user.getId());
+        List<Tasks> tasksList = repository.findByFolderIdAndUserId(folderId, user.getId());
+        logger.debug("Found {} tasks with folderId [{}] for user ID: {}", tasksList.size(), folderId, user.getId());
 
         return tasksList.stream()
                 .map(task -> new TaskResponseDto.GetTaskResponseDto()

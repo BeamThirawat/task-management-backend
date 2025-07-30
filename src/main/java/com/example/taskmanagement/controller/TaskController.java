@@ -27,11 +27,11 @@ public class TaskController {
 
     @Operation(description = "Get List Task By User ID")
     @GetMapping(value = "getTasks")
-    public StandardResponseDto<List<TaskResponseDto.GetTaskResponseDto>> getTasks(@RequestParam(required = false) Tasks.TaskStatus status) {
+    public StandardResponseDto<List<TaskResponseDto.GetTaskResponseDto>> getTasks(@RequestParam(required = false) Long folderId) {
         try {
             String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            if (status != null) {
-                return StandardResponseDto.createSuccessResponse(service.getTasksByStatus(status, email));
+            if (folderId != null) {
+                return StandardResponseDto.createSuccessResponse(service.getTasksByFolderId(folderId, email));
             }
             return StandardResponseDto.createSuccessResponse(service.getTasks(email));
         } catch (Exception e) {
