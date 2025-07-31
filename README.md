@@ -11,11 +11,6 @@
 ## Table of Contents
 
 • [Overview](#overview)
-
-• [Getting Started](#getting-started)
-
-  • [Prerequisites](#prerequisites)
-
 ---
 
 ## Overview
